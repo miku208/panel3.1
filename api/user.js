@@ -1,6 +1,5 @@
 const db = require('../lib/db');
 
-// Simple auth middleware
 function getUserFromToken(token) {
     if (!token) return null;
     try {
@@ -31,9 +30,11 @@ module.exports = async (req, res) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
-        // Get user's servers from Pterodactyl (simplified)
-        // In production, fetch from Pterodactyl API
-        const servers = [];
+        // Get user's servers from database
+        const servers = await db.query(
+            'SELECT id, server_id, server_name, server_type, status, created_at FROM user_servers WHERE user_id = ? ORDER BY created_at DESC',
+            [user.id]
+        );
         
         res.json({
             user: {
@@ -43,7 +44,7 @@ module.exports = async (req, res) => {
                 role: user.role,
                 status: user.status
             },
-            servers
+            servers: servers
         });
     } catch (error) {
         console.error(error);

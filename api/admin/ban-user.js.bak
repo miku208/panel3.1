@@ -32,23 +32,17 @@ module.exports = async (req, res) => {
             return res.status(403).json({ error: 'Admin access required' });
         }
         
-        const targetUser = await db.getOne('SELECT role FROM users WHERE id = ?', [userId]);
+        const targetUser = await db.getOne('SELECT status FROM users WHERE id = ?', [userId]);
         
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found' });
         }
         
-        if (targetUser.role === 'admin') {
-            return res.status(403).json({ error: 'Cannot delete admin users' });
-        }
+        const newStatus = targetUser.status === 'active' ? 'banned' : 'active';
         
-        // Delete user's servers first
-        await db.deleteQuery('DELETE FROM user_servers WHERE user_id = ?', [userId]);
+        await db.update('UPDATE users SET status = ? WHERE id = ?', [newStatus, userId]);
         
-        // Delete user
-        await db.deleteQuery('DELETE FROM users WHERE id = ?', [userId]);
-        
-        res.json({ success: true, message: 'User deleted successfully' });
+        res.json({ success: true, status: newStatus });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

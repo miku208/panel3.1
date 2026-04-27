@@ -47,27 +47,18 @@
             const confirmPassword = document.getElementById('confirmPassword').value;
             
             if (password !== confirmPassword) {
-                alert('Passwords do not match');
+                showNotification('Passwords do not match');
                 return;
             }
             
             try {
-                const response = await fetch('/api/register.js', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ fullname, email, password })
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-                
-                alert('Registration successful! Please login.');
-                window.location.href = '/login.html';
+                await register(fullname, email, password);
+                showNotification('Registration successful! Please login.', 'success');
+                setTimeout(() => {
+                    window.location.href = '/login.html';
+                }, 2000);
             } catch (error) {
-                alert(error.message);
+                showNotification(error.message);
             }
         });
     </script>

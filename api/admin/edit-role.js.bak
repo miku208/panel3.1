@@ -24,7 +24,11 @@ module.exports = async (req, res) => {
     }
     
     try {
-        const { userId } = req.body;
+        const { userId, role } = req.body;
+        
+        if (!['user', 'admin'].includes(role)) {
+            return res.status(400).json({ error: 'Invalid role' });
+        }
         
         const admin = await db.getOne('SELECT role FROM users WHERE id = ?', [authUser.id]);
         
@@ -32,23 +36,15 @@ module.exports = async (req, res) => {
             return res.status(403).json({ error: 'Admin access required' });
         }
         
-        const targetUser = await db.getOne('SELECT role FROM users WHERE id = ?', [userId]);
+        const targetUser = await db.getOne('SELECT id FROM users WHERE id = ?', [userId]);
         
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found' });
         }
         
-        if (targetUser.role === 'admin') {
-            return res.status(403).json({ error: 'Cannot delete admin users' });
-        }
+        await db.update('UPDATE users SET role = ? WHERE id = ?', [role, userId]);
         
-        // Delete user's servers first
-        await db.deleteQuery('DELETE FROM user_servers WHERE user_id = ?', [userId]);
-        
-        // Delete user
-        await db.deleteQuery('DELETE FROM users WHERE id = ?', [userId]);
-        
-        res.json({ success: true, message: 'User deleted successfully' });
+        res.json({ success: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

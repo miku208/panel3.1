@@ -42,13 +42,9 @@ module.exports = async (req, res) => {
             return res.status(403).json({ error: 'Cannot delete admin users' });
         }
         
-        // Delete user's servers first
-        await db.deleteQuery('DELETE FROM user_servers WHERE user_id = ?', [userId]);
+        await db.update('DELETE FROM users WHERE id = ?', [userId]);
         
-        // Delete user
-        await db.deleteQuery('DELETE FROM users WHERE id = ?', [userId]);
-        
-        res.json({ success: true, message: 'User deleted successfully' });
+        res.json({ success: true });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

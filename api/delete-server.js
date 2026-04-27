@@ -32,30 +32,45 @@ module.exports = async (req, res) => {
             return res.status(401).json({ error: 'Unauthorized' });
         }
         
+        // Check if server belongs to user
+        const userServer = await db.getOne(
+            'SELECT server_id FROM user_servers WHERE user_id = ? AND server_id = ?',
+            [user.id, serverId]
+        );
+        
+        if (!userServer && user.role !== 'admin') {
+            return res.status(403).json({ error: 'You do not own this server' });
+        }
+        
         // Get Pterodactyl settings
         const settings = await db.getPterodactylSettings();
         
-        if (!settings.ptero_api_key || !settings.ptero_url) {
-            return res.status(500).json({ error: 'Pterodactyl not configured' });
-        }
-        
-        // Delete server via Pterodactyl API
-        const response = await fetch(`${settings.ptero_url}/api/application/servers/${serverId}`, {
-            method: 'DELETE',
-            headers: {
-                'Authorization': `Bearer ${settings.ptero_api_key}`,
-                'Accept': 'application/json'
+        if (settings.ptero_api_key && settings.ptero_url) {
+            // Delete server via Pterodactyl API
+            const response = await fetch(`${settings.ptero_url}/api/application/servers/${serverId}`, {
+                method: 'DELETE',
+                headers: {
+                    'Authorization': `Bearer ${settings.ptero_api_key}`,
+                    'Accept': 'application/json'
+                }
+            });
+            
+            if (!response.ok && response.status !== 404) {
+                const data = await response.json();
+                console.error('Pterodactyl delete error:', data);
+                // Continue to delete from local DB even if Pterodactyl fails
             }
-        });
-        
-        if (!response.ok && response.status !== 404) {
-            const data = await response.json();
-            throw new Error(data.errors?.[0]?.detail || 'Failed to delete server');
         }
         
-        res.json({ success: true });
+        // Delete from database
+        await db.deleteQuery(
+            'DELETE FROM user_servers WHERE server_id = ?',
+            [serverId]
+        );
+        
+        res.json({ success: true, message: 'Server deleted successfully' });
     } catch (error) {
-        console.error(error);
-        res.status(500).json({ error: error.message || 'Internal server error' });
+        console.error('Delete server error:', error);
+        res.status(500).json({ error: error.message || 'Failed to delete server' });
     }
 };

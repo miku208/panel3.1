@@ -7,41 +7,30 @@ module.exports = async (req, res) => {
     }
     
     try {
-        const { email, password } = req.body;
+        const { fullname, email, password } = req.body;
         
-        if (!email || !password) {
-            return res.status(400).json({ error: 'Email and password required' });
+        if (!fullname || !email || !password) {
+            return res.status(400).json({ error: 'All fields required' });
         }
         
-        const user = await db.getOne('SELECT * FROM users WHERE email = ?', [email]);
-        
-        if (!user) {
-            return res.status(401).json({ error: 'Invalid credentials' });
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'Password must be at least 6 characters' });
         }
         
-        if (user.status === 'banned') {
-            return res.status(403).json({ error: 'Your account has been banned' });
+        const existing = await db.getOne('SELECT id FROM users WHERE email = ?', [email]);
+        
+        if (existing) {
+            return res.status(400).json({ error: 'Email already registered' });
         }
         
-        const isValid = await bcrypt.compare(password, user.password);
+        const hashedPassword = await bcrypt.hash(password, 10);
         
-        if (!isValid) {
-            return res.status(401).json({ error: 'Invalid credentials' });
-        }
+        const userId = await db.insert(
+            'INSERT INTO users (full_name, email, password, role, status) VALUES (?, ?, ?, "user", "active")',
+            [fullname, email, hashedPassword]
+        );
         
-        // Generate simple token (in production, use JWT)
-        const token = Buffer.from(`${user.id}:${Date.now()}`).toString('base64');
-        
-        res.json({
-            token,
-            user: {
-                id: user.id,
-                email: user.email,
-                fullname: user.full_name,
-                role: user.role,
-                status: user.status
-            }
-        });
+        res.json({ success: true, userId, message: 'Registration successful! Please login.' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

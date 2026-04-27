@@ -26,10 +26,6 @@ module.exports = async (req, res) => {
     try {
         const { name, type } = req.body;
         
-        if (!name) {
-            return res.status(400).json({ error: 'Server name required' });
-        }
-        
         const user = await db.getOne('SELECT id, role, status FROM users WHERE id = ?', [authUser.id]);
         
         if (!user || user.status === 'banned') {
@@ -40,30 +36,8 @@ module.exports = async (req, res) => {
         const settings = await db.getPterodactylSettings();
         
         if (!settings.ptero_api_key || !settings.ptero_url) {
-            return res.status(500).json({ error: 'Pterodactyl not configured. Please contact admin.' });
+            return res.status(500).json({ error: 'Pterodactyl not configured' });
         }
-        
-        // Configuration for different server types
-        const serverConfigs = {
-            minecraft: {
-                egg: 1,
-                docker_image: 'ghcr.io/pterodactyl/yolks:java_17',
-                startup: 'java -Xmx1024M -Xms1024M -jar server.jar nogui',
-                memory: 1024,
-                disk: 5120,
-                cpu: 100
-            },
-            bot: {
-                egg: 2,
-                docker_image: 'ghcr.io/parkervcp/yolks:nodejs_18',
-                startup: 'npm start',
-                memory: 512,
-                disk: 2048,
-                cpu: 50
-            }
-        };
-        
-        const config = serverConfigs[type] || serverConfigs.minecraft;
         
         // Create server via Pterodactyl API
         const response = await fetch(`${settings.ptero_url}/api/application/servers`, {
@@ -76,16 +50,16 @@ module.exports = async (req, res) => {
             body: JSON.stringify({
                 name: name,
                 user: user.id,
-                egg: config.egg,
-                docker_image: config.docker_image,
-                startup: config.startup,
+                egg: type === 'minecraft' ? 1 : 2, // Example egg IDs
+                docker_image: type === 'minecraft' ? 'ghcr.io/pterodactyl/yolks:java_17' : 'ghcr.io/parkervcp/yolks:nodejs_18',
+                startup: type === 'minecraft' ? 'java -Xmx1024M -Xms1024M -jar server.jar nogui' : 'npm start',
                 environment: {},
                 limits: {
-                    memory: config.memory,
+                    memory: 1024,
                     swap: 0,
-                    disk: config.disk,
+                    disk: 5120,
                     io: 500,
-                    cpu: config.cpu
+                    cpu: 100
                 },
                 feature_limits: {
                     databases: 1,
@@ -98,27 +72,12 @@ module.exports = async (req, res) => {
         const data = await response.json();
         
         if (!response.ok) {
-            console.error('Pterodactyl API error:', data);
             throw new Error(data.errors?.[0]?.detail || 'Failed to create server');
         }
         
-        // Save to database
-        await db.insert(
-            'INSERT INTO user_servers (user_id, server_id, server_name, server_type, status) VALUES (?, ?, ?, ?, "active")',
-            [user.id, data.attributes.identifier, name, type]
-        );
-        
-        res.json({ 
-            success: true, 
-            server: {
-                id: data.attributes.identifier,
-                name: name,
-                type: type
-            },
-            message: 'Server created successfully!' 
-        });
+        res.json({ success: true, server: data.attributes });
     } catch (error) {
-        console.error('Create server error:', error);
-        res.status(500).json({ error: error.message || 'Failed to create server' });
+        console.error(error);
+        res.status(500).json({ error: error.message || 'Internal server error' });
     }
 };

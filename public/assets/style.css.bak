@@ -56,7 +56,6 @@ body {
     color: #667eea;
 }
 
-/* Buttons */
 .btn {
     padding: 0.5rem 1.5rem;
     border-radius: 8px;
@@ -64,8 +63,6 @@ body {
     cursor: pointer;
     font-size: 1rem;
     transition: all 0.3s;
-    text-decoration: none;
-    display: inline-block;
 }
 
 .btn-primary {
@@ -246,7 +243,7 @@ body {
     color: #888;
 }
 
-.form-group input, .form-group select {
+.form-group input {
     width: 100%;
     padding: 0.75rem;
     background: rgba(255, 255, 255, 0.05);
@@ -256,7 +253,7 @@ body {
     font-size: 1rem;
 }
 
-.form-group input:focus, .form-group select:focus {
+.form-group input:focus {
     outline: none;
     border-color: #667eea;
 }
@@ -278,6 +275,24 @@ body {
     text-decoration: none;
 }
 
+.alert {
+    padding: 0.75rem;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+}
+
+.alert-error {
+    background: rgba(220, 38, 38, 0.2);
+    border: 1px solid #dc2626;
+    color: #dc2626;
+}
+
+.alert-success {
+    background: rgba(34, 197, 94, 0.2);
+    border: 1px solid #22c55e;
+    color: #22c55e;
+}
+
 /* Dashboard Layout */
 .dashboard {
     display: flex;
@@ -291,7 +306,6 @@ body {
     padding: 2rem 1rem;
     position: fixed;
     height: 100vh;
-    overflow-y: auto;
 }
 
 .sidebar h3 {
@@ -365,7 +379,6 @@ th {
     padding: 0.25rem 0.75rem;
     border-radius: 20px;
     font-size: 0.85rem;
-    display: inline-block;
 }
 
 .badge-admin {
@@ -433,17 +446,11 @@ th {
     color: #888;
 }
 
-.price {
-    font-size: 2rem;
-    margin: 1rem 0;
-}
-
 /* Responsive */
 @media (max-width: 768px) {
     .sidebar {
         transform: translateX(-100%);
         transition: transform 0.3s;
-        z-index: 100;
     }
     
     .sidebar.open {
@@ -460,15 +467,5 @@ th {
     
     .features-grid {
         grid-template-columns: 1fr;
-    }
-    
-    .navbar-container {
-        flex-direction: column;
-        gap: 1rem;
-    }
-    
-    .nav-links {
-        flex-wrap: wrap;
-        justify-content: center;
     }
 }

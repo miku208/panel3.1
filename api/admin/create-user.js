@@ -55,7 +55,7 @@ module.exports = async (req, res) => {
             [fullname, email, hashedPassword, userRole]
         );
         
-        res.json({ success: true, userId });
+        res.json({ success: true, userId, message: 'User created successfully' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

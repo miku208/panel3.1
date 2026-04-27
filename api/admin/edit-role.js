@@ -44,7 +44,7 @@ module.exports = async (req, res) => {
         
         await db.update('UPDATE users SET role = ? WHERE id = ?', [role, userId]);
         
-        res.json({ success: true });
+        res.json({ success: true, message: `User role updated to ${role}` });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

@@ -119,17 +119,11 @@ function showNotification(message, type = 'error') {
 
 // Modal functions
 function openModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.add('active');
-    }
+    document.getElementById(modalId).classList.add('active');
 }
 
 function closeModal(modalId) {
-    const modal = document.getElementById(modalId);
-    if (modal) {
-        modal.classList.remove('active');
-    }
+    document.getElementById(modalId).classList.remove('active');
 }
 
 // Format date
@@ -139,26 +133,13 @@ function formatDate(dateString) {
 
 // Show loading
 function showLoading(elementId) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.innerHTML = '<div class="loading">Loading...</div>';
-    }
+    document.getElementById(elementId).innerHTML = '<div class="loading">Loading...</div>';
 }
 
 // Hide loading
 function hideLoading(elementId, content) {
-    const element = document.getElementById(elementId);
-    if (element) {
-        element.innerHTML = content;
-    }
+    document.getElementById(elementId).innerHTML = content;
 }
-
-// Close modal on outside click
-document.addEventListener('click', (e) => {
-    if (e.target.classList.contains('modal')) {
-        e.target.classList.remove('active');
-    }
-});
 
 // Initialize page
 document.addEventListener('DOMContentLoaded', () => {
@@ -171,14 +152,4 @@ document.addEventListener('DOMContentLoaded', () => {
             logout();
         });
     });
-    
-    // Setup mobile menu toggle
-    const menuBtn = document.getElementById('mobileMenuBtn');
-    const sidebar = document.querySelector('.sidebar');
-    
-    if (menuBtn && sidebar) {
-        menuBtn.addEventListener('click', () => {
-            sidebar.classList.toggle('open');
-        });
-    }
 });

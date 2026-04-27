@@ -13,7 +13,6 @@
             <nav>
                 <a href="#" class="active">Users</a>
                 <a href="#" id="createUserBtn">Create User</a>
-                <a href="#" id="settingsBtn">Settings</a>
                 <a href="#" class="logout-btn">Logout</a>
             </nav>
         </aside>
@@ -30,8 +29,8 @@
                         <thead>
                             <tr>
                                 <th>ID</th>
-                                <th>Name</th>
                                 <th>Email</th>
+                                <th>Full Name</th>
                                 <th>Role</th>
                                 <th>Status</th>
                                 <th>Actions</th>
@@ -78,52 +77,15 @@
         </div>
     </div>
 
-    <!-- Settings Modal -->
-    <div id="settingsModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h3>Pterodactyl Settings</h3>
-                <span class="modal-close" onclick="closeModal('settingsModal')">&times;</span>
-            </div>
-            <form id="settingsForm">
-                <div class="form-group">
-                    <label>Pterodactyl API Key</label>
-                    <input type="text" id="pteroApiKey" required placeholder="ptlc_xxxx">
-                </div>
-                <div class="form-group">
-                    <label>Pterodactyl Panel URL</label>
-                    <input type="url" id="pteroUrl" required placeholder="https://your-panel.com">
-                </div>
-                <button type="submit" class="btn btn-primary">Save Settings</button>
-            </form>
-        </div>
-    </div>
-
     <script>
         async function loadUsers() {
-            const token = localStorage.getItem('token');
-            
             try {
-                const response = await fetch('/api/admin/users.js', {
-                    headers: { 'Authorization': `Bearer ${token}` }
-                });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-                
-                if (data.users.length === 0) {
-                    document.getElementById('usersList').innerHTML = '<tr><td colspan="6" class="loading">No users found</td></tr>';
-                    return;
-                }
-                
+                const data = await apiCall('/admin/users.js');
                 const usersHtml = data.users.map(user => `
                     <tr>
                         <td>${user.id}</td>
-                        <td>${escapeHtml(user.full_name)}</td>
-                        <td>${escapeHtml(user.email)}</td>
+                        <td>${user.email}</td>
+                        <td>${user.fullname}</td>
                         <td><span class="badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}">${user.role}</span></td>
                         <td><span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-banned'}">${user.status}</span></td>
                         <td>
@@ -138,96 +100,50 @@
                 
                 document.getElementById('usersList').innerHTML = usersHtml;
             } catch (error) {
-                if (error.message === 'Unauthorized' || error.message === 'Admin access required') {
-                    window.location.href = '/login.html';
-                } else {
-                    alert(error.message);
-                }
+                showNotification(error.message);
             }
         }
         
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
-        
         async function banUser(userId) {
-            const token = localStorage.getItem('token');
             try {
-                const response = await fetch('/api/admin/ban-user.js', {
+                await apiCall('/admin/ban-user.js', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
                     body: JSON.stringify({ userId })
                 });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-                
-                alert(data.message);
+                showNotification('User status updated', 'success');
                 loadUsers();
             } catch (error) {
-                alert(error.message);
+                showNotification(error.message);
             }
         }
         
         async function editRole(userId) {
-            const newRole = prompt('Enter new role (user/admin):', 'user');
+            const newRole = prompt('Enter new role (user/admin):');
             if (newRole && (newRole === 'user' || newRole === 'admin')) {
-                const token = localStorage.getItem('token');
                 try {
-                    const response = await fetch('/api/admin/edit-role.js', {
+                    await apiCall('/admin/edit-role.js', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
                         body: JSON.stringify({ userId, role: newRole })
                     });
-                    
-                    const data = await response.json();
-                    
-                    if (!response.ok) {
-                        throw new Error(data.error);
-                    }
-                    
-                    alert(data.message);
+                    showNotification('Role updated', 'success');
                     loadUsers();
                 } catch (error) {
-                    alert(error.message);
+                    showNotification(error.message);
                 }
             }
         }
         
         async function deleteUser(userId) {
-            if (confirm('Are you sure you want to delete this user? This will also delete all their servers!')) {
-                const token = localStorage.getItem('token');
+            if (confirm('Are you sure you want to delete this user?')) {
                 try {
-                    const response = await fetch('/api/admin/delete-user.js', {
+                    await apiCall('/admin/delete-user.js', {
                         method: 'POST',
-                        headers: {
-                            'Content-Type': 'application/json',
-                            'Authorization': `Bearer ${token}`
-                        },
                         body: JSON.stringify({ userId })
                     });
-                    
-                    const data = await response.json();
-                    
-                    if (!response.ok) {
-                        throw new Error(data.error);
-                    }
-                    
-                    alert(data.message);
+                    showNotification('User deleted', 'success');
                     loadUsers();
                 } catch (error) {
-                    alert(error.message);
+                    showNotification(error.message);
                 }
             }
         }
@@ -240,44 +156,23 @@
             const email = document.getElementById('email').value;
             const password = document.getElementById('password').value;
             const role = document.getElementById('role').value;
-            const token = localStorage.getItem('token');
             
             try {
-                const response = await fetch('/api/admin/create-user.js', {
+                await apiCall('/admin/create-user.js', {
                     method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': `Bearer ${token}`
-                    },
                     body: JSON.stringify({ fullname, email, password, role })
                 });
-                
-                const data = await response.json();
-                
-                if (!response.ok) {
-                    throw new Error(data.error);
-                }
-                
-                alert('User created successfully!');
+                showNotification('User created successfully!', 'success');
                 closeModal('createUserModal');
-                document.getElementById('createUserForm').reset();
                 loadUsers();
+                document.getElementById('createUserForm').reset();
             } catch (error) {
-                alert(error.message);
+                showNotification(error.message);
             }
         });
         
         document.getElementById('createUserBtn')?.addEventListener('click', () => {
             openModal('createUserModal');
-        });
-        
-        document.getElementById('settingsBtn')?.addEventListener('click', () => {
-            openModal('settingsModal');
-        });
-        
-        document.getElementById('settingsForm')?.addEventListener('submit', async (e) => {
-            e.preventDefault();
-            alert('Pterodactyl settings will be saved to database. This feature is coming soon!');
         });
         
         loadUsers();

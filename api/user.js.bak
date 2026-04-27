@@ -1,5 +1,6 @@
-const db = require('../../lib/db');
+const db = require('../lib/db');
 
+// Simple auth middleware
 function getUserFromToken(token) {
     if (!token) return null;
     try {
@@ -24,15 +25,26 @@ module.exports = async (req, res) => {
     }
     
     try {
-        const admin = await db.getOne('SELECT role FROM users WHERE id = ?', [authUser.id]);
+        const user = await db.getOne('SELECT id, email, full_name, role, status FROM users WHERE id = ?', [authUser.id]);
         
-        if (!admin || admin.role !== 'admin') {
-            return res.status(403).json({ error: 'Admin access required' });
+        if (!user || user.status === 'banned') {
+            return res.status(401).json({ error: 'Unauthorized' });
         }
         
-        const users = await db.query('SELECT id, email, full_name, role, status, created_at FROM users ORDER BY id DESC');
+        // Get user's servers from Pterodactyl (simplified)
+        // In production, fetch from Pterodactyl API
+        const servers = [];
         
-        res.json({ success: true, users });
+        res.json({
+            user: {
+                id: user.id,
+                email: user.email,
+                fullname: user.full_name,
+                role: user.role,
+                status: user.status
+            },
+            servers
+        });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

@@ -32,17 +32,21 @@ module.exports = async (req, res) => {
             return res.status(403).json({ error: 'Admin access required' });
         }
         
-        const targetUser = await db.getOne('SELECT status FROM users WHERE id = ?', [userId]);
+        const targetUser = await db.getOne('SELECT status, role FROM users WHERE id = ?', [userId]);
         
         if (!targetUser) {
             return res.status(404).json({ error: 'User not found' });
+        }
+        
+        if (targetUser.role === 'admin') {
+            return res.status(403).json({ error: 'Cannot ban admin users' });
         }
         
         const newStatus = targetUser.status === 'active' ? 'banned' : 'active';
         
         await db.update('UPDATE users SET status = ? WHERE id = ?', [newStatus, userId]);
         
-        res.json({ success: true, status: newStatus });
+        res.json({ success: true, status: newStatus, message: `User ${newStatus === 'active' ? 'unbanned' : 'banned'} successfully` });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

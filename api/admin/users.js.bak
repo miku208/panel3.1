@@ -12,7 +12,7 @@ function getUserFromToken(token) {
 }
 
 module.exports = async (req, res) => {
-    if (req.method !== 'POST') {
+    if (req.method !== 'GET') {
         return res.status(405).json({ error: 'Method not allowed' });
     }
     
@@ -24,31 +24,15 @@ module.exports = async (req, res) => {
     }
     
     try {
-        const { userId } = req.body;
-        
         const admin = await db.getOne('SELECT role FROM users WHERE id = ?', [authUser.id]);
         
         if (!admin || admin.role !== 'admin') {
             return res.status(403).json({ error: 'Admin access required' });
         }
         
-        const targetUser = await db.getOne('SELECT role FROM users WHERE id = ?', [userId]);
+        const users = await db.query('SELECT id, email, full_name, role, status, created_at FROM users ORDER BY id DESC');
         
-        if (!targetUser) {
-            return res.status(404).json({ error: 'User not found' });
-        }
-        
-        if (targetUser.role === 'admin') {
-            return res.status(403).json({ error: 'Cannot delete admin users' });
-        }
-        
-        // Delete user's servers first
-        await db.deleteQuery('DELETE FROM user_servers WHERE user_id = ?', [userId]);
-        
-        // Delete user
-        await db.deleteQuery('DELETE FROM users WHERE id = ?', [userId]);
-        
-        res.json({ success: true, message: 'User deleted successfully' });
+        res.json({ users });
     } catch (error) {
         console.error(error);
         res.status(500).json({ error: 'Internal server error' });

@@ -68,42 +68,6 @@
         </div>
     </section>
 
-    <section id="pricing" class="features" style="background: #0a0a0a;">
-        <div class="container">
-            <h2>Simple Pricing</h2>
-            <div class="features-grid">
-                <div class="feature-card">
-                    <h3>Starter</h3>
-                    <div class="price" style="font-size: 2rem; margin: 1rem 0;">$9<span style="font-size: 1rem;">/mo</span></div>
-                    <p>1 Server</p>
-                    <p>2GB RAM</p>
-                    <p>10GB Storage</p>
-                    <a href="register.html" class="btn btn-primary" style="margin-top: 1rem;">Get Started</a>
-                </div>
-                <div class="feature-card" style="border-color: #667eea;">
-                    <h3>Professional</h3>
-                    <div class="price" style="font-size: 2rem; margin: 1rem 0;">$29<span style="font-size: 1rem;">/mo</span></div>
-                    <p>5 Servers</p>
-                    <p>8GB RAM</p>
-                    <p>50GB Storage</p>
-                    <a href="register.html" class="btn btn-primary" style="margin-top: 1rem;">Get Started</a>
-                </div>
-                <div class="feature-card">
-                    <h3>Enterprise</h3>
-                    <div class="price" style="font-size: 2rem; margin: 1rem 0;">$99<span style="font-size: 1rem;">/mo</span></div>
-                    <p>Unlimited Servers</p>
-                    <p>32GB RAM</p>
-                    <p>200GB Storage</p>
-                    <a href="register.html" class="btn btn-primary" style="margin-top: 1rem;">Contact Us</a>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <footer style="text-align: center; padding: 2rem; background: #0f0f0f; border-top: 1px solid rgba(255,255,255,0.1);">
-        <p>&copy; 2024 SaaS Panel. All rights reserved.</p>
-    </footer>
-
     <script src="assets/script.js"></script>
 </body>
 </html>
