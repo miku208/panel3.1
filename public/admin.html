@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - SaaS Panel</title>
+    <link rel="stylesheet" href="assets/style.css">
+</head>
+<body>
+    <div class="dashboard">
+        <aside class="sidebar">
+            <h3>🚀 SaaS Panel</h3>
+            <nav>
+                <a href="#" class="active">Users</a>
+                <a href="#" id="createUserBtn">Create User</a>
+                <a href="#" class="logout-btn">Logout</a>
+            </nav>
+        </aside>
+        
+        <main class="main-content">
+            <h1>Admin Dashboard</h1>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2>User Management</h2>
+                </div>
+                <div class="table-container">
+                    <table id="usersTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Email</th>
+                                <th>Full Name</th>
+                                <th>Role</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="usersList">
+                            <tr><td colspan="6" class="loading">Loading users...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Create User Modal -->
+    <div id="createUserModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Create New User</h3>
+                <span class="modal-close" onclick="closeModal('createUserModal')">&times;</span>
+            </div>
+            <form id="createUserForm">
+                <div class="form-group">
+                    <label>Full Name</label>
+                    <input type="text" id="fullname" required>
+                </div>
+                <div class="form-group">
+                    <label>Email</label>
+                    <input type="email" id="email" required>
+                </div>
+                <div class="form-group">
+                    <label>Password</label>
+                    <input type="password" id="password" required>
+                </div>
+                <div class="form-group">
+                    <label>Role</label>
+                    <select id="role">
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                    </select>
+                </div>
+                <button type="submit" class="btn btn-primary">Create User</button>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        async function loadUsers() {
+            try {
+                const data = await apiCall('/admin/users.js');
+                const usersHtml = data.users.map(user => `
+                    <tr>
+                        <td>${user.id}</td>
+                        <td>${user.email}</td>
+                        <td>${user.fullname}</td>
+                        <td><span class="badge ${user.role === 'admin' ? 'badge-admin' : 'badge-user'}">${user.role}</span></td>
+                        <td><span class="badge ${user.status === 'active' ? 'badge-active' : 'badge-banned'}">${user.status}</span></td>
+                        <td>
+                            ${user.role !== 'admin' ? `
+                                <button onclick="banUser(${user.id})" class="btn btn-secondary" style="margin: 2px;">${user.status === 'active' ? 'Ban' : 'Unban'}</button>
+                                <button onclick="editRole(${user.id})" class="btn btn-secondary" style="margin: 2px;">Edit Role</button>
+                            ` : ''}
+                            <button onclick="deleteUser(${user.id})" class="btn btn-danger" style="margin: 2px;">Delete</button>
+                        </td>
+                    </tr>
+                `).join('');
+                
+                document.getElementById('usersList').innerHTML = usersHtml;
+            } catch (error) {
+                showNotification(error.message);
+            }
+        }
+        
+        async function banUser(userId) {
+            try {
+                await apiCall('/admin/ban-user.js', {
+                    method: 'POST',
+                    body: JSON.stringify({ userId })
+                });
+                showNotification('User status updated', 'success');
+                loadUsers();
+            } catch (error) {
+                showNotification(error.message);
+            }
+        }
+        
+        async function editRole(userId) {
+            const newRole = prompt('Enter new role (user/admin):');
+            if (newRole && (newRole === 'user' || newRole === 'admin')) {
+                try {
+                    await apiCall('/admin/edit-role.js', {
+                        method: 'POST',
+                        body: JSON.stringify({ userId, role: newRole })
+                    });
+                    showNotification('Role updated', 'success');
+                    loadUsers();
+                } catch (error) {
+                    showNotification(error.message);
+                }
+            }
+        }
+        
+        async function deleteUser(userId) {
+            if (confirm('Are you sure you want to delete this user?')) {
+                try {
+                    await apiCall('/admin/delete-user.js', {
+                        method: 'POST',
+                        body: JSON.stringify({ userId })
+                    });
+                    showNotification('User deleted', 'success');
+                    loadUsers();
+                } catch (error) {
+                    showNotification(error.message);
+                }
+            }
+        }
+        
+        // Create user form
+        document.getElementById('createUserForm')?.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const fullname = document.getElementById('fullname').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const role = document.getElementById('role').value;
+            
+            try {
+                await apiCall('/admin/create-user.js', {
+                    method: 'POST',
+                    body: JSON.stringify({ fullname, email, password, role })
+                });
+                showNotification('User created successfully!', 'success');
+                closeModal('createUserModal');
+                loadUsers();
+                document.getElementById('createUserForm').reset();
+            } catch (error) {
+                showNotification(error.message);
+            }
+        });
+        
+        document.getElementById('createUserBtn')?.addEventListener('click', () => {
+            openModal('createUserModal');
+        });
+        
+        loadUsers();
+    </script>
+    <script src="assets/script.js"></script>
+</body>
+</html>
